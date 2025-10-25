@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kvStore } from '@/lib/kv';
 
+// CORS headers for cross-origin requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+};
+
 // Verify API key
 function verifyApiKey(request: NextRequest): boolean {
   const apiKey = request.headers.get('x-api-key');
@@ -12,6 +19,11 @@ function verifyApiKey(request: NextRequest): boolean {
   }
 
   return apiKey === expectedKey;
+}
+
+// Handle OPTIONS preflight requests
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
 }
 
 // GET /api/tasks - List all team tasks
@@ -29,12 +41,12 @@ export async function GET(request: NextRequest) {
       success: true,
       tasks: filteredTasks,
       count: filteredTasks.length
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('Error fetching tasks:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch tasks' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -45,7 +57,7 @@ export async function POST(request: NextRequest) {
   if (!verifyApiKey(request)) {
     return NextResponse.json(
       { success: false, error: 'Unauthorized - Invalid API key' },
-      { status: 401 }
+      { status: 401, headers: corsHeaders }
     );
   }
 
@@ -56,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!body.title) {
       return NextResponse.json(
         { success: false, error: 'Title is required' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -80,12 +92,12 @@ export async function POST(request: NextRequest) {
       success: true,
       task: savedTask,
       message: 'Task pushed to team board'
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('Error creating task:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create task' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -97,7 +109,7 @@ export async function PUT(request: NextRequest) {
     if (!taskId) {
       return NextResponse.json(
         { success: false, error: 'Task ID required' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -107,19 +119,19 @@ export async function PUT(request: NextRequest) {
     if (!updatedTask) {
       return NextResponse.json(
         { success: false, error: 'Task not found' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
     return NextResponse.json({
       success: true,
       task: updatedTask
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error('Error updating task:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update task' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
