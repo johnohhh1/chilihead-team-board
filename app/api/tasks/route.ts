@@ -8,17 +8,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
 };
 
-// Verify API key
+// Verify API key (manager key or team key)
 function verifyApiKey(request: NextRequest): boolean {
   const apiKey = request.headers.get('x-api-key');
-  const expectedKey = process.env.API_SECRET_KEY;
+  const managerKey = process.env.API_SECRET_KEY;
+  const teamKey = process.env.NEXT_PUBLIC_TEAM_API_KEY || 'team-member-access';
 
-  if (!expectedKey) {
+  if (!managerKey) {
     console.error('API_SECRET_KEY not configured');
     return false;
   }
 
-  return apiKey === expectedKey;
+  // Allow either manager key or team key
+  return apiKey === managerKey || apiKey === teamKey;
 }
 
 // Handle OPTIONS preflight requests

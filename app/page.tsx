@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Circle, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, AlertTriangle, RefreshCw, Plus } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -20,6 +20,14 @@ export default function TeamBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'todo' | 'in_progress' | 'completed'>('all');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    priority: 'normal' as Task['priority'],
+    due_date: '',
+    assigned_to: ''
+  });
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -59,6 +67,43 @@ export default function TeamBoard() {
       }
     } catch (error) {
       console.error('Failed to update task:', error);
+    }
+  };
+
+  const addNewTask = async () => {
+    if (!newTask.title.trim()) return;
+
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_TEAM_API_KEY || 'team-member-access'
+        },
+        body: JSON.stringify({
+          title: newTask.title,
+          description: newTask.description,
+          priority: newTask.priority,
+          due_date: newTask.due_date || undefined,
+          assigned_to: newTask.assigned_to,
+          status: 'todo',
+          pushed_by: 'Team Member'
+        })
+      });
+
+      if (response.ok) {
+        setNewTask({
+          title: '',
+          description: '',
+          priority: 'normal',
+          due_date: '',
+          assigned_to: ''
+        });
+        setShowAddForm(false);
+        fetchTasks();
+      }
+    } catch (error) {
+      console.error('Failed to add task:', error);
     }
   };
 
@@ -145,6 +190,92 @@ export default function TeamBoard() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {/* Add Task Form */}
+        <div className="mb-6 bg-gray-800 rounded-xl border border-gray-700 p-6">
+          {!showAddForm ? (
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="w-full flex items-center justify-center space-x-2 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Add New Task</span>
+            </button>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-white">Add New Task</h3>
+                <button
+                  onClick={() => setShowAddForm(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Task title *"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+
+              <textarea
+                placeholder="Description (optional)"
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Priority</label>
+                  <select
+                    value={newTask.priority}
+                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as Task['priority'] })}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Due Date</label>
+                  <input
+                    type="date"
+                    value={newTask.due_date}
+                    onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Assigned To</label>
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={newTask.assigned_to}
+                    onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={addNewTask}
+                disabled={!newTask.title.trim()}
+                className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+              >
+                Add Task
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Filters */}
         <div className="mb-6 flex items-center space-x-2">
           <button
