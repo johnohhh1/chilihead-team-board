@@ -58,12 +58,17 @@ export default function TeamBoard() {
     try {
       const response = await fetch(`/api/tasks?id=${taskId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.NEXT_PUBLIC_TEAM_API_KEY || 'team-member-access'
+        },
         body: JSON.stringify({ status: newStatus })
       });
 
       if (response.ok) {
         fetchTasks();
+      } else {
+        console.error('Failed to update task status:', await response.text());
       }
     } catch (error) {
       console.error('Failed to update task:', error);
