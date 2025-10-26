@@ -59,7 +59,12 @@ async function writeTasksToBlob(tasks: Task[]): Promise<void> {
     await put(BLOB_KEY, data, {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: false // Overwrite existing blob instead of creating new one
     });
+
+    // Clear cache to force re-read
+    tasksCache = tasks;
+    cacheTimestamp = Date.now();
   } catch (error) {
     console.error('Error writing to Blob:', error);
     throw error;
