@@ -18,7 +18,7 @@ interface Task {
   pushed_by: string;
 }
 
-// Create connection pool (reuses connections efficiently)
+// For serverless, we need to create a new pool or reuse existing
 let pool: any = null;
 
 function getPool(): any {
@@ -29,16 +29,21 @@ function getPool(): any {
       throw new Error('DATABASE_URL or POSTGRES_URL environment variable not configured');
     }
 
+    console.log('Creating new PostgreSQL connection pool');
+
     pool = new Pool({
       connectionString,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-      max: 20, // Maximum number of connections in pool
+      ssl: {
+        rejectUnauthorized: false
+      },
+      max: 1, // For serverless, use minimal connections
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000,
     });
 
     pool.on('error', (err: Error) => {
       console.error('Unexpected database error:', err);
+      pool = null; // Reset pool on error
     });
   }
 

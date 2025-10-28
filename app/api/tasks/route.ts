@@ -31,6 +31,10 @@ export async function OPTIONS() {
 // GET /api/tasks - List all team tasks
 export async function GET(request: NextRequest) {
   try {
+    // Log environment check
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('POSTGRES_URL exists:', !!process.env.POSTGRES_URL);
+    
     const status = request.nextUrl.searchParams.get('status');
     const tasks = await dbStore.getTasks(status || undefined);
 
@@ -39,10 +43,16 @@ export async function GET(request: NextRequest) {
       tasks: tasks,
       count: tasks.length
     }, { headers: corsHeaders });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching tasks:', error);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch tasks' },
+      { 
+        success: false, 
+        error: 'Failed to fetch tasks',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500, headers: corsHeaders }
     );
   }
