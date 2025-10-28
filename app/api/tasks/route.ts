@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kvStore } from '@/lib/kv';
+import { dbStore } from '@/lib/db';
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -31,18 +31,13 @@ export async function OPTIONS() {
 // GET /api/tasks - List all team tasks
 export async function GET(request: NextRequest) {
   try {
-    const tasks = await kvStore.getTasks();
-
-    // Optional: Filter by status
     const status = request.nextUrl.searchParams.get('status');
-    const filteredTasks = status
-      ? tasks.filter(t => t.status === status)
-      : tasks;
+    const tasks = await dbStore.getTasks(status || undefined);
 
     return NextResponse.json({
       success: true,
-      tasks: filteredTasks,
-      count: filteredTasks.length
+      tasks: tasks,
+      count: tasks.length
     }, { headers: corsHeaders });
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -83,12 +78,10 @@ export async function POST(request: NextRequest) {
       due_date: body.due_date,
       assigned_to: body.assigned_to,
       status: body.status || 'todo',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
       pushed_by: body.pushed_by || 'ChiliHead System'
     };
 
-    const savedTask = await kvStore.addTask(task);
+    const savedTask = await dbStore.addTask(task);
 
     return NextResponse.json({
       success: true,
@@ -116,7 +109,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updates = await request.json();
-    const updatedTask = await kvStore.updateTask(taskId, updates);
+    const updatedTask = await dbStore.updateTask(taskId, updates);
 
     if (!updatedTask) {
       return NextResponse.json(
@@ -133,6 +126,47 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating task:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update task' },
+      { status: 500, headers: corsHeaders }
+    );
+  }
+}
+
+// DELETE /api/tasks?id=xxx - Delete a task
+export async function DELETE(request: NextRequest) {
+  // Verify API key (manager only)
+  if (!verifyApiKey(request)) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized - Invalid API key' },
+      { status: 401, headers: corsHeaders }
+    );
+  }
+
+  try {
+    const taskId = request.nextUrl.searchParams.get('id');
+    if (!taskId) {
+      return NextResponse.json(
+        { success: false, error: 'Task ID required' },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const deleted = await dbStore.deleteTask(taskId);
+
+    if (!deleted) {
+      return NextResponse.json(
+        { success: false, error: 'Task not found' },
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Task deleted'
+    }, { headers: corsHeaders });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete task' },
       { status: 500, headers: corsHeaders }
     );
   }
