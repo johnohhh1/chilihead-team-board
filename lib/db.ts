@@ -42,6 +42,10 @@ function getPool(): any {
 
     console.log('Creating new PostgreSQL connection pool');
 
+    // Parse the connection string explicitly
+    const url = new URL(connectionString);
+    console.log('Parsed connection - Host:', url.hostname, 'Port:', url.port);
+
     pool = new Pool({
       connectionString,
       ssl: {
