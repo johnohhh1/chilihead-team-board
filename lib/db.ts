@@ -55,9 +55,12 @@ export const dbStore = {
    * Get all tasks, optionally filtered by status
    */
   async getTasks(status?: string): Promise<Task[]> {
-    const pool = getPool();
+    console.log('[getTasks] Starting fetch...');
     
     try {
+      const pool = getPool();
+      console.log('[getTasks] Got pool');
+      
       let query = 'SELECT * FROM team_tasks';
       const params: any[] = [];
 
@@ -67,8 +70,10 @@ export const dbStore = {
       }
 
       query += ' ORDER BY created_at DESC';
+      console.log('[getTasks] Executing query:', query);
 
       const result = await pool.query(query, params);
+      console.log('[getTasks] Query success, rows:', result.rows.length);
       
       return result.rows.map((row: any) => ({
         ...row,
@@ -76,9 +81,12 @@ export const dbStore = {
         created_at: row.created_at.toISOString(),
         updated_at: row.updated_at.toISOString(),
       }));
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      throw new Error('Failed to fetch tasks from database');
+    } catch (error: any) {
+      console.error('[getTasks] Error:', error);
+      console.error('[getTasks] Error message:', error?.message);
+      console.error('[getTasks] Error code:', error?.code);
+      console.error('[getTasks] Error stack:', error?.stack);
+      throw new Error(`Failed to fetch tasks from database: ${error?.message}`);
     }
   },
 
