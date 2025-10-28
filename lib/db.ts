@@ -3,7 +3,7 @@
  * Much more reliable, no duplication issues, instant updates
  */
 
-import { Pool, PoolClient } from 'pg';
+const { Pool } = require('pg');
 
 interface Task {
   id: string;
@@ -19,9 +19,9 @@ interface Task {
 }
 
 // Create connection pool (reuses connections efficiently)
-let pool: Pool | null = null;
+let pool: any = null;
 
-function getPool(): Pool {
+function getPool(): any {
   if (!pool) {
     const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
     
@@ -37,7 +37,7 @@ function getPool(): Pool {
       connectionTimeoutMillis: 2000,
     });
 
-    pool.on('error', (err) => {
+    pool.on('error', (err: Error) => {
       console.error('Unexpected database error:', err);
     });
   }
@@ -65,7 +65,7 @@ export const dbStore = {
 
       const result = await pool.query(query, params);
       
-      return result.rows.map(row => ({
+      return result.rows.map((row: any) => ({
         ...row,
         due_date: row.due_date ? row.due_date.toISOString() : undefined,
         created_at: row.created_at.toISOString(),
