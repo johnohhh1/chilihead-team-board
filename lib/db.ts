@@ -23,10 +23,21 @@ let pool: any = null;
 
 function getPool(): any {
   if (!pool) {
-    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    // Try different environment variable names
+    const connectionString = process.env.POSTGRES_URL || 
+                            process.env.DATABASE_URL || 
+                            process.env.POSTGRES_PRISMA_URL ||
+                            process.env.DATABASE_POSTGRES_URL;
+    
+    console.log('Environment variables available:');
+    console.log('- POSTGRES_URL:', process.env.POSTGRES_URL ? 'SET' : 'NOT SET');
+    console.log('- DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+    console.log('- POSTGRES_PRISMA_URL:', process.env.POSTGRES_PRISMA_URL ? 'SET' : 'NOT SET');
+    console.log('- DATABASE_POSTGRES_URL:', process.env.DATABASE_POSTGRES_URL ? 'SET' : 'NOT SET');
+    console.log('Using connection string:', connectionString ? connectionString.substring(0, 30) + '...' : 'NONE');
     
     if (!connectionString) {
-      throw new Error('DATABASE_URL or POSTGRES_URL environment variable not configured');
+      throw new Error('No database connection string found in environment variables');
     }
 
     console.log('Creating new PostgreSQL connection pool');
