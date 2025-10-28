@@ -3,7 +3,7 @@
  * Much more reliable, no duplication issues, instant updates
  */
 
-const { Pool } = require('pg');
+import { Pool } from 'pg';
 
 interface Task {
   id: string;
